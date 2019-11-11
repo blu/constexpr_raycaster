@@ -1,8 +1,12 @@
 #include <stdio.h>
 
 #include <cstdint>
+#include <cfloat>
 #include <cmath>
-#include <algorithm>
+
+#ifndef MAXFLOAT
+#define MAXFLOAT FLT_MAX
+#endif
 
 // type float3 provides basic arithmetics over cartesian vectors
 struct float3
@@ -33,10 +37,10 @@ struct float3
 
 	constexpr float3 rcp() const
 	{
-		// division by zero is underfined at compile time -- emulate runtime behaviour
-		const float rcp_x = x != 0 ? 1.f / x : INFINITY;
-		const float rcp_y = y != 0 ? 1.f / y : INFINITY;
-		const float rcp_z = z != 0 ? 1.f / z : INFINITY;
+		// division by zero is underfined at compile time -- approximate runtime behaviour
+		const float rcp_x = x != 0 ? 1.f / x : MAXFLOAT;
+		const float rcp_y = y != 0 ? 1.f / y : MAXFLOAT;
+		const float rcp_z = z != 0 ? 1.f / z : MAXFLOAT;
 		return float3(
 			rcp_x,
 			rcp_y,
@@ -228,32 +232,22 @@ struct matx4_rotate : matx4
 constexpr float3 fmin(const float3& a, const float3& b)
 {
 	return float3(
-		std::min(a.x, b.x),
-		std::min(a.y, b.y),
-		std::min(a.z, b.z));
+		fminf(a.x, b.x),
+		fminf(a.y, b.y),
+		fminf(a.z, b.z));
 }
 
 constexpr float3 fmax(const float3& a, const float3& b)
 {
 	return float3(
-		std::max(a.x, b.x),
-		std::max(a.y, b.y),
-		std::max(a.z, b.z));
+		fmaxf(a.x, b.x),
+		fmaxf(a.y, b.y),
+		fmaxf(a.z, b.z));
 }
 
 constexpr float3 clamp(const float3& x, const float3& min, const float3& max)
 {
 	return fmax(fmin(x, max), min);
-}
-
-constexpr float fmin(float a, float b)
-{
-	return std::min(a, b);
-}
-
-constexpr float fmax(float a, float b)
-{
-	return std::max(a, b);
 }
 
 constexpr bool isless(float a, float b)
@@ -300,10 +294,10 @@ constexpr float intersect(
 	const float3 axial_min = fmin(t0, t1);
 	const float3 axial_max = fmax(t0, t1);
 
-	const float min = fmax(fmax(axial_min.x, axial_min.y), axial_min.z);
-	const float max = fmin(fmin(axial_max.x, axial_max.y), axial_max.z);
+	const float min = fmaxf(fmaxf(axial_min.x, axial_min.y), axial_min.z);
+	const float max = fminf(fminf(axial_max.x, axial_max.y), axial_max.z);
 
-	return select(INFINITY, min, isless(0.f, min) && isless(min, max));
+	return select(MAXFLOAT, min, isless(0.f, min) && isless(min, max));
 }
 
 typedef uint8_t Pixel;
@@ -325,18 +319,18 @@ constexpr Pixel shootRay(
 		cam[2];
 
 	const Ray ray{ cam[3], clamp(ray_direction.rcp(), -MAXFLOAT / 2, MAXFLOAT / 2) };
-	float closest = INFINITY;
+	float closest = MAXFLOAT;
 
 	for (size_t i = 0; i < size; ++i)
-		closest = fmin(closest, intersect(scene[i], ray));
+		closest = fminf(closest, intersect(scene[i], ray));
 
-	return INFINITY != closest ? Pixel(closest / 4.f * 255.f) : 0;
+	return MAXFLOAT != closest ? Pixel(closest / 4.f * 255.f) : 0;
 }
 
 constexpr BBox computeSceneBBox(const Voxel* scene, size_t size)
 {
-	float3 bbox_min{ +INFINITY, +INFINITY, +INFINITY };
-	float3 bbox_max{ -INFINITY, -INFINITY, -INFINITY };
+	float3 bbox_min{ +MAXFLOAT, +MAXFLOAT, +MAXFLOAT };
+	float3 bbox_max{ -MAXFLOAT, -MAXFLOAT, -MAXFLOAT };
 
 	for (size_t i = 0; i < size; ++i) {
 		bbox_min = fmin(bbox_min, scene[i].min);
@@ -358,7 +352,7 @@ int main(int, char**)
 	constexpr BBox bbox = computeSceneBBox(scene, scene_size);
 	constexpr float3 centre = (bbox.max + bbox.min) * float3(.5f);
 	constexpr float3 extent = (bbox.max - bbox.min) * float3(.5f);
-	constexpr float max_extent = std::max(extent.x, std::max(extent.y, extent.z));
+	constexpr float max_extent = fmaxf(extent.x, fmaxf(extent.y, extent.z));
 
 	// camera settings in world space
 	constexpr float sce_roll = M_PI_2 * .25f;
