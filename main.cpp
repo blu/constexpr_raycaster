@@ -1,8 +1,8 @@
 #include <stdio.h>
 
 #include <cstdint>
+#include <cfloat>
 #include <cmath>
-#include <algorithm>
 
 // type float3 provides basic arithmetics over cartesian vectors
 struct float3
@@ -11,19 +11,19 @@ struct float3
 	float y;
 	float z;
 
-	constexpr float3(float x, float y, float z)
+	float3(float x, float y, float z)
 	: x(x)
 	, y(y)
 	, z(z)
 	{}
 
-	constexpr float3(float same)
+	float3(float same)
 	: x(same)
 	, y(same)
 	, z(same)
 	{}
 
-	constexpr float3 operator -() const
+	float3 operator -() const
 	{
 		return float3(
 			-x,
@@ -31,7 +31,7 @@ struct float3
 			-z);
 	}
 
-	constexpr float3 rcp() const
+	float3 rcp() const
 	{
 		// division by zero is underfined at compile time -- emulate runtime behaviour
 		const float rcp_x = x != 0 ? 1.f / x : INFINITY;
@@ -43,7 +43,7 @@ struct float3
 			rcp_z);
 	}
 
-	constexpr float3 operator +(const float3& rhs) const
+	float3 operator +(const float3& rhs) const
 	{
 		return float3(
 			x + rhs.x,
@@ -51,12 +51,12 @@ struct float3
 			z + rhs.z);
 	}
 
-	constexpr float3 operator -(const float3& rhs) const
+	float3 operator -(const float3& rhs) const
 	{
 		return *this + -rhs;
 	}
 
-	constexpr float3 operator *(const float3& rhs) const
+	float3 operator *(const float3& rhs) const
 	{
 		return float3(
 			x * rhs.x,
@@ -64,7 +64,7 @@ struct float3
 			z * rhs.z);
 	}
 
-	constexpr float3 operator /(const float3& rhs) const
+	float3 operator /(const float3& rhs) const
 	{
 		return *this * rhs.rcp();
 	}
@@ -75,15 +75,15 @@ struct float4
 {
 	float m[4];
 
-	constexpr float4(float e0, float e1, float e2, float e3)
+	float4(float e0, float e1, float e2, float e3)
 	: m{ e0, e1, e2, e3 }
 	{}
 
-	constexpr float4(float same)
+	float4(float same)
 	: m{ same, same, same, same }
 	{}
 
-	constexpr float4 operator -() const
+	float4 operator -() const
 	{
 		return float4(
 			-m[0],
@@ -92,7 +92,7 @@ struct float4
 			-m[3]);
 	}
 
-	constexpr float4 operator +(const float4& rhs) const
+	float4 operator +(const float4& rhs) const
 	{
 		return float4(
 			m[0] + rhs[0],
@@ -101,12 +101,12 @@ struct float4
 			m[3] + rhs[3]);
 	}
 
-	constexpr float4 operator -(const float4& rhs) const
+	float4 operator -(const float4& rhs) const
 	{
 		return *this + -rhs;
 	}
 
-	constexpr float4 operator *(const float4& rhs) const
+	float4 operator *(const float4& rhs) const
 	{
 		return float4(
 			m[0] * rhs[0],
@@ -115,7 +115,7 @@ struct float4
 			m[3] * rhs[3]);
 	}
 
-	constexpr float operator [](size_t index) const
+	float operator [](size_t index) const
 	{
 		return m[index];
 	}
@@ -125,7 +125,7 @@ struct matx4
 {
 	float4 m[4];
 
-	constexpr matx4(
+	matx4(
 		const float c00, const float c01, const float c02, const float c03,
 		const float c10, const float c11, const float c12, const float c13,
 		const float c20, const float c21, const float c22, const float c23,
@@ -136,7 +136,7 @@ struct matx4
          float4(c30, c31, c32, c33) }
 	{}
 
-	constexpr matx4(
+	matx4(
 		const float4& row0,
 		const float4& row1,
 		const float4& row2,
@@ -144,16 +144,16 @@ struct matx4
 	: m{ row0, row1, row2, row3 }
 	{}
 
-	constexpr matx4(const float4& same)
+	matx4(const float4& same)
 	: m{ same, same, same, same }
 	{}
 
-	constexpr float4 operator [](size_t index) const
+	float4 operator [](size_t index) const
 	{
 		return m[index];
 	}
 
-	constexpr matx4 transpose() const
+	matx4 transpose() const
 	{
 		return matx4(
 			m[0][0], m[1][0], m[2][0], m[3][0],
@@ -163,7 +163,7 @@ struct matx4
 	}
 };
 
-constexpr float3 operator *(
+__attribute__ ((always_inline)) float3 operator *(
 	const float3& v,
 	const matx4& m)
 {
@@ -179,7 +179,7 @@ constexpr float3 operator *(
 		r[2]);
 }
 
-constexpr matx4 operator *(
+__attribute__ ((always_inline)) matx4 operator *(
 	const matx4& a,
 	const matx4& b)
 {
@@ -212,7 +212,7 @@ constexpr matx4 operator *(
 
 struct matx4_rotate : matx4
 {
-	constexpr matx4_rotate(
+	matx4_rotate(
 		float sin_a,
 		float cos_a,
 		float x,
@@ -225,43 +225,33 @@ struct matx4_rotate : matx4
 	{}
 };
 
-constexpr float3 fmin(const float3& a, const float3& b)
+__attribute__ ((always_inline)) float3 fmin(const float3& a, const float3& b)
 {
 	return float3(
-		std::min(a.x, b.x),
-		std::min(a.y, b.y),
-		std::min(a.z, b.z));
+		fminf(a.x, b.x),
+		fminf(a.y, b.y),
+		fminf(a.z, b.z));
 }
 
-constexpr float3 fmax(const float3& a, const float3& b)
+__attribute__ ((always_inline)) float3 fmax(const float3& a, const float3& b)
 {
 	return float3(
-		std::max(a.x, b.x),
-		std::max(a.y, b.y),
-		std::max(a.z, b.z));
+		fmaxf(a.x, b.x),
+		fmaxf(a.y, b.y),
+		fmaxf(a.z, b.z));
 }
 
-constexpr float3 clamp(const float3& x, const float3& min, const float3& max)
+__attribute__ ((always_inline)) float3 clamp(const float3& x, const float3& min, const float3& max)
 {
 	return fmax(fmin(x, max), min);
 }
 
-constexpr float fmin(float a, float b)
-{
-	return std::min(a, b);
-}
-
-constexpr float fmax(float a, float b)
-{
-	return std::max(a, b);
-}
-
-constexpr bool isless(float a, float b)
+__attribute__ ((always_inline)) bool isless(float a, float b)
 {
 	return a < b;
 }
 
-constexpr float select(float arg_else, float arg_then, bool pred)
+__attribute__ ((always_inline)) float select(float arg_else, float arg_then, bool pred)
 {
 	return pred ? arg_then : arg_else;
 }
@@ -271,7 +261,7 @@ struct BBox
 	float3 min;
 	float3 max;
 
-	constexpr BBox(const float3& min, const float3& max)
+	BBox(const float3& min, const float3& max)
 	: min(min)
 	, max(max)
 	{}
@@ -284,13 +274,13 @@ struct Ray
 	float3 origin;
 	float3 rcpdir;
 
-	constexpr Ray(const float3& origin, const float3& rcpdir)
+	Ray(const float3& origin, const float3& rcpdir)
 	: origin(origin)
 	, rcpdir(rcpdir)
 	{}
 };
 
-constexpr float intersect(
+__attribute__ ((always_inline)) float intersect(
 	const BBox& bbox,
 	const Ray& ray)
 {
@@ -300,15 +290,15 @@ constexpr float intersect(
 	const float3 axial_min = fmin(t0, t1);
 	const float3 axial_max = fmax(t0, t1);
 
-	const float min = fmax(fmax(axial_min.x, axial_min.y), axial_min.z);
-	const float max = fmin(fmin(axial_max.x, axial_max.y), axial_max.z);
+	const float min = fmaxf(fmaxf(axial_min.x, axial_min.y), axial_min.z);
+	const float max = fminf(fminf(axial_max.x, axial_max.y), axial_max.z);
 
 	return select(INFINITY, min, isless(0.f, min) && isless(min, max));
 }
 
 typedef uint8_t Pixel;
 
-constexpr Pixel shootRay(
+__attribute__ ((always_inline)) Pixel shootRay(
 	int global_idx,
 	int image_w,
 	int image_h,
@@ -328,12 +318,12 @@ constexpr Pixel shootRay(
 	float closest = INFINITY;
 
 	for (size_t i = 0; i < size; ++i)
-		closest = fmin(closest, intersect(scene[i], ray));
+		closest = fminf(closest, intersect(scene[i], ray));
 
 	return INFINITY != closest ? Pixel(closest / 4.f * 255.f) : 0;
 }
 
-constexpr BBox computeSceneBBox(const Voxel* scene, size_t size)
+__attribute__ ((always_inline)) BBox computeSceneBBox(const Voxel* scene, size_t size)
 {
 	float3 bbox_min{ +INFINITY, +INFINITY, +INFINITY };
 	float3 bbox_max{ -INFINITY, -INFINITY, -INFINITY };
@@ -349,37 +339,37 @@ constexpr BBox computeSceneBBox(const Voxel* scene, size_t size)
 int main(int, char**)
 {
 	// scene content in world space
-	constexpr Voxel scene[] = {
+	const Voxel scene[] = {
 		Voxel(float3(-.75f, -.75f, -.75f), float3(.25f, .25f, .25f)),
 		Voxel(float3(-.25f, -.25f, -.25f), float3(.75f, .75f, .75f)),
 	};
 	// scene meta
 	const size_t scene_size = sizeof(scene) / sizeof(scene[0]);
-	constexpr BBox bbox = computeSceneBBox(scene, scene_size);
-	constexpr float3 centre = (bbox.max + bbox.min) * float3(.5f);
-	constexpr float3 extent = (bbox.max - bbox.min) * float3(.5f);
-	constexpr float max_extent = std::max(extent.x, std::max(extent.y, extent.z));
+	const BBox bbox = computeSceneBBox(scene, scene_size);
+	const float3 centre = (bbox.max + bbox.min) * float3(.5f);
+	const float3 extent = (bbox.max - bbox.min) * float3(.5f);
+	const float max_extent = fmaxf(extent.x, fmaxf(extent.y, extent.z));
 
 	// camera settings in world space
-	constexpr float sce_roll = M_PI_2 * .25f;
-	constexpr float sce_azim = 0;
-	constexpr float sce_decl = 0;
-	constexpr float3 cam_pos{ 0, 0, 2.125f };
+	const float sce_roll = M_PI_2 * .25f;
+	const float sce_azim = 0;
+	const float sce_decl = 0;
+	const float3 cam_pos{ 0, 0, 2.125f };
 
 	// view transform
-	constexpr float sin_roll = sin(sce_roll);
-	constexpr float cos_roll = cos(sce_roll);
-	constexpr float sin_azim = sin(sce_azim);
-	constexpr float cos_azim = cos(sce_azim);
-	constexpr float sin_decl = sin(sce_decl);
-	constexpr float cos_decl = cos(sce_decl);
+	const float sin_roll = sin(sce_roll);
+	const float cos_roll = cos(sce_roll);
+	const float sin_azim = sin(sce_azim);
+	const float cos_azim = cos(sce_azim);
+	const float sin_decl = sin(sce_decl);
+	const float cos_decl = cos(sce_decl);
 
-	constexpr matx4 rot =
+	const matx4 rot =
 		matx4_rotate(sin_roll, cos_roll, 0.f, 1.f, 0.f) *
 		matx4_rotate(sin_azim, cos_azim, 0.f, 0.f, 1.f) *
 		matx4_rotate(sin_decl, cos_decl, 1.f, 0.f, 0.f);
 
-	constexpr matx4 eye{
+	const matx4 eye{
 		1.f, 0.f, 0.f, 0.f,
 		0.f, 1.f, 0.f, 0.f,
 		0.f, 0.f, 1.f, 0.f,
@@ -387,7 +377,7 @@ int main(int, char**)
 		cam_pos.y,
 		cam_pos.z, 1.f};
 
-	constexpr matx4 zoom_n_pan(
+	const matx4 zoom_n_pan(
 		max_extent, 0.f, 0.f, 0.f,
 		0.f, max_extent, 0.f, 0.f,
 		0.f, 0.f, max_extent, 0.f,
@@ -398,14 +388,14 @@ int main(int, char**)
 	// forward: pan * zoom * rot * eyep
 	// inverse: (eyep)-1 * rotT * (zoom)-1 * (pan)-1
 
-	constexpr matx4 mv_inv = eye * rot.transpose() * zoom_n_pan;
+	const matx4 mv_inv = eye * rot.transpose() * zoom_n_pan;
 
 	// view transform as expected by the image integrator (4x float3)
-	constexpr int image_w = 256;
-	constexpr int image_h = 256;
+	const int image_w = 256;
+	const int image_h = 256;
 	// warning: updates to the image dimensions require updates to the injection macros below
 
-	constexpr float3 cam[] = {
+	const float3 cam[] = {
 		float3(mv_inv[0][0], mv_inv[0][1], mv_inv[0][2]),
 		float3(mv_inv[1][0], mv_inv[1][1], mv_inv[1][2]) * float3(float(image_h) / image_w),
 		float3(mv_inv[2][0], mv_inv[2][1], mv_inv[2][2]) * float3(-1),
@@ -431,7 +421,7 @@ int main(int, char**)
 	#define INJECT_ELEMENTS_F(n) INJECT_ELEMENTS_E(n) INJECT_ELEMENTS_E(n + 16384)
 	#define INJECT_ELEMENTS_G(n) INJECT_ELEMENTS_F(n) INJECT_ELEMENTS_F(n + 32768)
 
-	constexpr Pixel image[] = {
+	const Pixel image[] = {
 		INJECT_ELEMENTS_G(0) // global element index starts from 0
 	};
 
