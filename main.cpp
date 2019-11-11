@@ -15,19 +15,19 @@ struct float3
 	float y;
 	float z;
 
-	float3(float x, float y, float z)
+	__attribute__ ((always_inline)) float3(float x, float y, float z)
 	: x(x)
 	, y(y)
 	, z(z)
 	{}
 
-	float3(float same)
+	__attribute__ ((always_inline)) float3(float same)
 	: x(same)
 	, y(same)
 	, z(same)
 	{}
 
-	float3 operator -() const
+	__attribute__ ((always_inline)) float3 operator -() const
 	{
 		return float3(
 			-x,
@@ -35,7 +35,7 @@ struct float3
 			-z);
 	}
 
-	float3 rcp() const
+	__attribute__ ((always_inline)) float3 rcp() const
 	{
 		// division by zero is underfined at compile time -- approximate runtime behaviour
 		const float rcp_x = x != 0 ? 1.f / x : MAXFLOAT;
@@ -47,7 +47,7 @@ struct float3
 			rcp_z);
 	}
 
-	float3 operator +(const float3& rhs) const
+	__attribute__ ((always_inline)) float3 operator +(const float3& rhs) const
 	{
 		return float3(
 			x + rhs.x,
@@ -55,12 +55,12 @@ struct float3
 			z + rhs.z);
 	}
 
-	float3 operator -(const float3& rhs) const
+	__attribute__ ((always_inline)) float3 operator -(const float3& rhs) const
 	{
 		return *this + -rhs;
 	}
 
-	float3 operator *(const float3& rhs) const
+	__attribute__ ((always_inline)) float3 operator *(const float3& rhs) const
 	{
 		return float3(
 			x * rhs.x,
@@ -68,7 +68,7 @@ struct float3
 			z * rhs.z);
 	}
 
-	float3 operator /(const float3& rhs) const
+	__attribute__ ((always_inline)) float3 operator /(const float3& rhs) const
 	{
 		return *this * rhs.rcp();
 	}
@@ -79,15 +79,15 @@ struct float4
 {
 	float m[4];
 
-	float4(float e0, float e1, float e2, float e3)
+	__attribute__ ((always_inline)) float4(float e0, float e1, float e2, float e3)
 	: m{ e0, e1, e2, e3 }
 	{}
 
-	float4(float same)
+	__attribute__ ((always_inline)) float4(float same)
 	: m{ same, same, same, same }
 	{}
 
-	float4 operator -() const
+	__attribute__ ((always_inline)) float4 operator -() const
 	{
 		return float4(
 			-m[0],
@@ -96,7 +96,7 @@ struct float4
 			-m[3]);
 	}
 
-	float4 operator +(const float4& rhs) const
+	__attribute__ ((always_inline)) float4 operator +(const float4& rhs) const
 	{
 		return float4(
 			m[0] + rhs[0],
@@ -105,12 +105,12 @@ struct float4
 			m[3] + rhs[3]);
 	}
 
-	float4 operator -(const float4& rhs) const
+	__attribute__ ((always_inline)) float4 operator -(const float4& rhs) const
 	{
 		return *this + -rhs;
 	}
 
-	float4 operator *(const float4& rhs) const
+	__attribute__ ((always_inline)) float4 operator *(const float4& rhs) const
 	{
 		return float4(
 			m[0] * rhs[0],
@@ -119,7 +119,7 @@ struct float4
 			m[3] * rhs[3]);
 	}
 
-	float operator [](size_t index) const
+	__attribute__ ((always_inline)) float operator [](size_t index) const
 	{
 		return m[index];
 	}
@@ -129,7 +129,7 @@ struct matx4
 {
 	float4 m[4];
 
-	matx4(
+	__attribute__ ((always_inline)) matx4(
 		const float c00, const float c01, const float c02, const float c03,
 		const float c10, const float c11, const float c12, const float c13,
 		const float c20, const float c21, const float c22, const float c23,
@@ -140,7 +140,7 @@ struct matx4
          float4(c30, c31, c32, c33) }
 	{}
 
-	matx4(
+	__attribute__ ((always_inline)) matx4(
 		const float4& row0,
 		const float4& row1,
 		const float4& row2,
@@ -148,16 +148,16 @@ struct matx4
 	: m{ row0, row1, row2, row3 }
 	{}
 
-	matx4(const float4& same)
+	__attribute__ ((always_inline)) matx4(const float4& same)
 	: m{ same, same, same, same }
 	{}
 
-	float4 operator [](size_t index) const
+	__attribute__ ((always_inline)) float4 operator [](size_t index) const
 	{
 		return m[index];
 	}
 
-	matx4 transpose() const
+	__attribute__ ((always_inline)) matx4 transpose() const
 	{
 		return matx4(
 			m[0][0], m[1][0], m[2][0], m[3][0],
@@ -167,7 +167,7 @@ struct matx4
 	}
 };
 
-__attribute__ ((always_inline)) float3 operator *(
+__attribute__ ((always_inline)) inline float3 operator *(
 	const float3& v,
 	const matx4& m)
 {
@@ -183,7 +183,7 @@ __attribute__ ((always_inline)) float3 operator *(
 		r[2]);
 }
 
-__attribute__ ((always_inline)) matx4 operator *(
+__attribute__ ((always_inline)) inline matx4 operator *(
 	const matx4& a,
 	const matx4& b)
 {
@@ -216,7 +216,7 @@ __attribute__ ((always_inline)) matx4 operator *(
 
 struct matx4_rotate : matx4
 {
-	matx4_rotate(
+	__attribute__ ((always_inline)) matx4_rotate(
 		float sin_a,
 		float cos_a,
 		float x,
@@ -229,7 +229,7 @@ struct matx4_rotate : matx4
 	{}
 };
 
-__attribute__ ((always_inline)) float3 fmin(const float3& a, const float3& b)
+__attribute__ ((always_inline)) inline float3 fmin(const float3& a, const float3& b)
 {
 	return float3(
 		fminf(a.x, b.x),
@@ -237,7 +237,7 @@ __attribute__ ((always_inline)) float3 fmin(const float3& a, const float3& b)
 		fminf(a.z, b.z));
 }
 
-__attribute__ ((always_inline)) float3 fmax(const float3& a, const float3& b)
+__attribute__ ((always_inline)) inline float3 fmax(const float3& a, const float3& b)
 {
 	return float3(
 		fmaxf(a.x, b.x),
@@ -245,17 +245,17 @@ __attribute__ ((always_inline)) float3 fmax(const float3& a, const float3& b)
 		fmaxf(a.z, b.z));
 }
 
-__attribute__ ((always_inline)) float3 clamp(const float3& x, const float3& min, const float3& max)
+__attribute__ ((always_inline)) inline float3 clamp(const float3& x, const float3& min, const float3& max)
 {
 	return fmax(fmin(x, max), min);
 }
 
-__attribute__ ((always_inline)) bool isless(float a, float b)
+__attribute__ ((always_inline)) inline bool isless(float a, float b)
 {
 	return a < b;
 }
 
-__attribute__ ((always_inline)) float select(float arg_else, float arg_then, bool pred)
+__attribute__ ((always_inline)) inline float select(float arg_else, float arg_then, bool pred)
 {
 	return pred ? arg_then : arg_else;
 }
@@ -265,7 +265,7 @@ struct BBox
 	float3 min;
 	float3 max;
 
-	BBox(const float3& min, const float3& max)
+	__attribute__ ((always_inline)) BBox(const float3& min, const float3& max)
 	: min(min)
 	, max(max)
 	{}
@@ -278,13 +278,13 @@ struct Ray
 	float3 origin;
 	float3 rcpdir;
 
-	Ray(const float3& origin, const float3& rcpdir)
+	__attribute__ ((always_inline)) Ray(const float3& origin, const float3& rcpdir)
 	: origin(origin)
 	, rcpdir(rcpdir)
 	{}
 };
 
-__attribute__ ((always_inline)) float intersect(
+__attribute__ ((always_inline)) inline float intersect(
 	const BBox& bbox,
 	const Ray& ray)
 {
@@ -302,7 +302,7 @@ __attribute__ ((always_inline)) float intersect(
 
 typedef uint8_t Pixel;
 
-__attribute__ ((always_inline)) Pixel shootRay(
+__attribute__ ((always_inline)) inline Pixel shootRay(
 	int global_idx,
 	int image_w,
 	int image_h,
@@ -327,7 +327,7 @@ __attribute__ ((always_inline)) Pixel shootRay(
 	return MAXFLOAT != closest ? Pixel(closest / 4.f * 255.f) : 0;
 }
 
-__attribute__ ((always_inline)) BBox computeSceneBBox(const Voxel* scene, size_t size)
+__attribute__ ((always_inline)) inline BBox computeSceneBBox(const Voxel* scene, size_t size)
 {
 	float3 bbox_min{ +MAXFLOAT, +MAXFLOAT, +MAXFLOAT };
 	float3 bbox_max{ -MAXFLOAT, -MAXFLOAT, -MAXFLOAT };
@@ -395,8 +395,8 @@ int main(int, char**)
 	const matx4 mv_inv = eye * rot.transpose() * zoom_n_pan;
 
 	// view transform as expected by the image integrator (4x float3)
-	const int image_w = 256;
-	const int image_h = 256;
+	const int image_w = 32;
+	const int image_h = 32;
 	// warning: updates to the image dimensions require updates to the injection macros below
 
 	const float3 cam[] = {
@@ -426,7 +426,7 @@ int main(int, char**)
 	#define INJECT_ELEMENTS_G(n) INJECT_ELEMENTS_F(n) INJECT_ELEMENTS_F(n + 32768)
 
 	const Pixel image[] = {
-		INJECT_ELEMENTS_G(0) // global element index starts from 0
+		INJECT_ELEMENTS_A(0) // global element index starts from 0
 	};
 
 #if 0
