@@ -4,6 +4,10 @@
 #include <cfloat>
 #include <cmath>
 
+#ifndef MAXFLOAT
+#define MAXFLOAT FLT_MAX
+#endif
+
 // type float3 provides basic arithmetics over cartesian vectors
 struct float3
 {
@@ -33,10 +37,10 @@ struct float3
 
 	float3 rcp() const
 	{
-		// division by zero is underfined at compile time -- emulate runtime behaviour
-		const float rcp_x = x != 0 ? 1.f / x : INFINITY;
-		const float rcp_y = y != 0 ? 1.f / y : INFINITY;
-		const float rcp_z = z != 0 ? 1.f / z : INFINITY;
+		// division by zero is underfined at compile time -- approximate runtime behaviour
+		const float rcp_x = x != 0 ? 1.f / x : MAXFLOAT;
+		const float rcp_y = y != 0 ? 1.f / y : MAXFLOAT;
+		const float rcp_z = z != 0 ? 1.f / z : MAXFLOAT;
 		return float3(
 			rcp_x,
 			rcp_y,
@@ -293,7 +297,7 @@ __attribute__ ((always_inline)) float intersect(
 	const float min = fmaxf(fmaxf(axial_min.x, axial_min.y), axial_min.z);
 	const float max = fminf(fminf(axial_max.x, axial_max.y), axial_max.z);
 
-	return select(INFINITY, min, isless(0.f, min) && isless(min, max));
+	return select(MAXFLOAT, min, isless(0.f, min) && isless(min, max));
 }
 
 typedef uint8_t Pixel;
@@ -315,18 +319,18 @@ __attribute__ ((always_inline)) Pixel shootRay(
 		cam[2];
 
 	const Ray ray{ cam[3], clamp(ray_direction.rcp(), -MAXFLOAT / 2, MAXFLOAT / 2) };
-	float closest = INFINITY;
+	float closest = MAXFLOAT;
 
 	for (size_t i = 0; i < size; ++i)
 		closest = fminf(closest, intersect(scene[i], ray));
 
-	return INFINITY != closest ? Pixel(closest / 4.f * 255.f) : 0;
+	return MAXFLOAT != closest ? Pixel(closest / 4.f * 255.f) : 0;
 }
 
 __attribute__ ((always_inline)) BBox computeSceneBBox(const Voxel* scene, size_t size)
 {
-	float3 bbox_min{ +INFINITY, +INFINITY, +INFINITY };
-	float3 bbox_max{ -INFINITY, -INFINITY, -INFINITY };
+	float3 bbox_min{ +MAXFLOAT, +MAXFLOAT, +MAXFLOAT };
+	float3 bbox_max{ -MAXFLOAT, -MAXFLOAT, -MAXFLOAT };
 
 	for (size_t i = 0; i < size; ++i) {
 		bbox_min = fmin(bbox_min, scene[i].min);
