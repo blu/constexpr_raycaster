@@ -255,6 +255,11 @@ constexpr bool isless(float a, float b)
 	return a < b;
 }
 
+constexpr bool isgreaterequal(float a, float b)
+{
+	return a >= b;
+}
+
 constexpr float select(float arg_else, float arg_then, bool pred)
 {
 	return pred ? arg_then : arg_else;
@@ -284,7 +289,25 @@ struct Ray
 	{}
 };
 
-constexpr float intersect(
+struct Hit {
+	float dist;
+	int a_mask;
+	int b_mask;
+
+	constexpr Hit()
+	: dist(MAXFLOAT)
+	, a_mask(0)
+	, b_mask(0)
+	{}
+
+	constexpr Hit(float dist, int a_mask, int b_mask)
+	: dist(dist)
+	, a_mask(a_mask)
+	, b_mask(b_mask)
+	{}
+};
+
+constexpr Hit intersect(
 	const BBox& bbox,
 	const Ray& ray)
 {
@@ -294,13 +317,33 @@ constexpr float intersect(
 	const float3 axial_min = fmin(t0, t1);
 	const float3 axial_max = fmax(t0, t1);
 
+	const int a_mask = isgreaterequal(axial_min.x, axial_min.y);
+	const int b_mask = isgreaterequal(fmaxf(axial_min.x, axial_min.y), axial_min.z);
+
 	const float min = fmaxf(fmaxf(axial_min.x, axial_min.y), axial_min.z);
 	const float max = fminf(fminf(axial_max.x, axial_max.y), axial_max.z);
 
-	return select(MAXFLOAT, min, isless(0.f, min) && isless(min, max));
+	return Hit(select(MAXFLOAT, min, isless(0.f, min) && isless(min, max)), a_mask, b_mask);
 }
 
-typedef uint8_t Pixel;
+struct Pixel
+{
+	uint8_t r;
+	uint8_t g;
+	uint8_t b;
+
+	constexpr Pixel(uint8_t same)
+	: r(same)
+	, g(same)
+	, b(same)
+	{}
+
+	constexpr Pixel(const float3& a)
+	: r(a.x * 255.f)
+	, g(a.y * 255.f)
+	, b(a.z * 255.f)
+	{}
+};
 
 constexpr Pixel shootRay(
 	int global_idx,
@@ -319,12 +362,19 @@ constexpr Pixel shootRay(
 		cam[2];
 
 	const Ray ray{ cam[3], clamp(ray_direction.rcp(), -MAXFLOAT / 2, MAXFLOAT / 2) };
-	float closest = MAXFLOAT;
+	Hit closest;
 
-	for (size_t i = 0; i < size; ++i)
-		closest = fminf(closest, intersect(scene[i], ray));
+	for (size_t i = 0; i < size; ++i) {
+		const Hit hit = intersect(scene[i], ray);
 
-	return MAXFLOAT != closest ? Pixel(closest / 4.f * 255.f) : 0;
+		if (hit.dist < closest.dist)
+			closest = hit;
+	}
+
+	const int a_mask = closest.a_mask;
+	const int b_mask = closest.b_mask;
+	const float3 normal = b_mask ? (a_mask ? float3(1.f, 0.f, 0.f) : float3(0.f, 1.f, 0.f)) : float3(0.f, 0.f, 1.f);
+	return MAXFLOAT != closest.dist ? Pixel(normal * float3(.5f) + float3(.5f)) : Pixel(0);
 }
 
 constexpr BBox computeSceneBBox(const Voxel* scene, size_t size)
@@ -356,7 +406,7 @@ int main(int, char**)
 
 	// camera settings in world space
 	constexpr float sce_roll = M_PI_2 * .25f;
-	constexpr float sce_azim = 0;
+	constexpr float sce_azim = M_PI_2 * .5f;
 	constexpr float sce_decl = 0;
 	constexpr float3 cam_pos{ 0, 0, 2.125f };
 
@@ -369,8 +419,8 @@ int main(int, char**)
 	constexpr float cos_decl = cos(sce_decl);
 
 	constexpr matx4 rot =
-		matx4_rotate(sin_roll, cos_roll, 0.f, 1.f, 0.f) *
-		matx4_rotate(sin_azim, cos_azim, 0.f, 0.f, 1.f) *
+		matx4_rotate(sin_roll, cos_roll, 0.f, 0.f, 1.f) *
+		matx4_rotate(sin_azim, cos_azim, 0.f, 1.f, 0.f) *
 		matx4_rotate(sin_decl, cos_decl, 1.f, 0.f, 0.f);
 
 	constexpr matx4 eye{

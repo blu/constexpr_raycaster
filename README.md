@@ -7,8 +7,9 @@ Test passes successfully on:
 
 | compiler, RAM amount                                        |
 |-------------------------------------------------------------|
-| g++-6.3.0, 8GB RAM
+| g++-6.3.0, 8GB RAM                                          |
 | g++-7.4.0, 6GB RAM, 14GB VM                                 |
+| g++-8.1.0, 16GB RAM                                         |
 | g++-8.2.0, 4GB ZRAM                                         |
 | g++-8.3.0, 4GB ZRAM                                         |
 | g++-9.1.0, unknown (godbolt.org); output reduced to 128x128 |

@@ -187,7 +187,7 @@ int main(int, char**)
 	const size_t image_w = reinterpret_cast< uint16_t* >(input())[0];
 	const size_t image_h = reinterpret_cast< uint16_t* >(input())[1];
 
-	if (image_w * image_h + sizeof(uint16_t[2]) != inputLength) {
+	if (image_w * image_h * sizeof(uint8_t[3]) + sizeof(uint16_t[2]) != inputLength) {
 		stream::cerr << "input file dimensions mismatch; not an image or corrupt?\n";
 		return -1;
 	}
@@ -200,7 +200,7 @@ int main(int, char**)
 		return -1;
 	}
 
-	if (!write_png(true, image_w, image_h, reinterpret_cast< uint16_t* >(input()) + 2, file())) {
+	if (!write_png(false, image_w, image_h, reinterpret_cast< uint16_t* >(input()) + 2, file())) {
 		stream::cerr << "failure writing output file '" << outName << "'\n";
 		return -1;
 	}
